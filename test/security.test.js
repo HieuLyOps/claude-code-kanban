@@ -236,7 +236,8 @@ describe('isLoopbackAddress', { skip: !isLoopbackAddress }, () => {
   for (const host of ['localhost', '127.0.0.1', '127.1.2.3', '::1', '0:0:0:0:0:0:0:1', '::ffff:127.0.0.1']) {
     it(`accepts ${host}`, () => assert.equal(isLoopbackAddress(host), true));
   }
-  for (const host of ['0.0.0.0', '192.168.1.42', 'evil.com', '::', '', null]) {
+  // `127.attacker.com` resolves wherever its owner points it: the DNS-rebinding shape.
+  for (const host of ['0.0.0.0', '192.168.1.42', 'evil.com', '::', '', null, '127.attacker.com', '127.0.0.1.evil.com', '127.evil']) {
     it(`rejects ${JSON.stringify(host)}`, () => assert.equal(isLoopbackAddress(host), false));
   }
 });
@@ -252,6 +253,7 @@ describe('upgradeVerdict', { skip: !netGuard?.createNetGuard }, () => {
 
   it('rejects a rebinding Host', () => {
     assert.match(guard.upgradeVerdict(req('evil.com:3541', 'http://evil.com:3541')), /Host/);
+    assert.match(guard.upgradeVerdict(req('127.attacker.com:3541', 'http://127.attacker.com:3541')), /Host/);
   });
 
   for (const origin of [undefined, 'null', '', 'http://evil.com', 'not a url']) {

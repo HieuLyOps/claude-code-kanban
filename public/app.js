@@ -3375,6 +3375,35 @@ function zenPanelIsEditing() {
   return zenMode && !!sessionsList.querySelector('.linked-doc-input');
 }
 
+function sessionsEmptyHtml({ zenMode, searchQuery, filterProject, sessionFilter }) {
+  let emptyMsg = 'No sessions found';
+  let emptyHint = 'Tasks appear when you use Claude Code';
+
+  if (zenMode) {
+    emptyMsg = 'Zen mode: no session open';
+    emptyHint = 'Press Ctrl+Shift+Z to leave zen mode, then open a session';
+  } else if (searchQuery) {
+    // Seeded from `?search=`, which any page can put in a link to the board.
+    emptyMsg = escapeHtml(`No results for "${searchQuery}"`);
+    emptyHint = 'Try a different search term or clear the search';
+  } else if (filterProject && sessionFilter === 'active') {
+    emptyMsg = 'No active sessions for this project filter';
+    emptyHint = 'Try "All Sessions" or clear the project filter';
+  } else if (filterProject) {
+    emptyMsg = 'No sessions for this project filter';
+    emptyHint = 'Clear the project filter to see all';
+  } else if (sessionFilter === 'active') {
+    emptyMsg = 'No active sessions';
+    emptyHint = 'Select "All Sessions" to see all';
+  }
+  return `
+          <div style="padding: 24px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
+            <p>${emptyMsg}</p>
+            <p style="margin-top: 8px; font-size: 11px;">${emptyHint}</p>
+          </div>
+        `;
+}
+
 function renderSessions() {
   // Rebuilding the list under the pointer cancels an in-flight drop and would swallow a
   // half-typed group name, and the SSE path can fire at any moment — defer instead.
@@ -3387,31 +3416,7 @@ function renderSessions() {
   const filteredSessions = zenMode ? (zenSession ? [zenSession] : []) : getFilteredSessions();
 
   if (filteredSessions.length === 0) {
-    let emptyMsg = 'No sessions found';
-    let emptyHint = 'Tasks appear when you use Claude Code';
-
-    if (zenMode) {
-      emptyMsg = 'Zen mode: no session open';
-      emptyHint = 'Press Ctrl+Shift+Z to leave zen mode, then open a session';
-    } else if (searchQuery) {
-      emptyMsg = `No results for "${searchQuery}"`;
-      emptyHint = 'Try a different search term or clear the search';
-    } else if (filterProject && sessionFilter === 'active') {
-      emptyMsg = 'No active sessions for this project filter';
-      emptyHint = 'Try "All Sessions" or clear the project filter';
-    } else if (filterProject) {
-      emptyMsg = 'No sessions for this project filter';
-      emptyHint = 'Clear the project filter to see all';
-    } else if (sessionFilter === 'active') {
-      emptyMsg = 'No active sessions';
-      emptyHint = 'Select "All Sessions" to see all';
-    }
-    sessionsList.innerHTML = `
-          <div style="padding: 24px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
-            <p>${emptyMsg}</p>
-            <p style="margin-top: 8px; font-size: 11px;">${emptyHint}</p>
-          </div>
-        `;
+    sessionsList.innerHTML = sessionsEmptyHtml({ zenMode, searchQuery, filterProject, sessionFilter });
     return;
   }
 
